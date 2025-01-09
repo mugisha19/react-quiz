@@ -1,3 +1,5 @@
+import { useEffect, useReducer } from "react";
+
 import Header from "./Header";
 import Main from "./Main";
 import Loader from "./Loader";
@@ -7,8 +9,10 @@ import Question from "./Question";
 import NextButton from "./NextButton";
 import Progress from "./Progress";
 import FinishScreen from "./FinishScreen";
-import { useEffect, useReducer } from "react";
+import Timer from "./Timer";
+import Footer from "./Footer";
 
+const SECS_PER_QUESTION = 30;
 const initialState = {
   questions: [],
   status: "loading",
@@ -16,6 +20,7 @@ const initialState = {
   answer: null,
   points: 0,
   highscore: 0,
+  secondsRemaing: 10,
 };
 
 function reducer(state, action) {
@@ -37,6 +42,7 @@ function reducer(state, action) {
       return {
         ...state,
         status: "active",
+        secondsRemaing: state.questions.length * SECS_PER_QUESTION,
       };
 
     case "newAnswer":
@@ -71,6 +77,12 @@ function reducer(state, action) {
         status: "ready",
         questions: state.questions,
       };
+    case "tick":
+      return {
+        ...state,
+        secondsRemaing: state.secondsRemaing - 1,
+        status: state.secondsRemaing === 1 ? "finished" : state.status,
+      };
 
     default:
       throw new Error("Unkown action type");
@@ -79,7 +91,7 @@ function reducer(state, action) {
 
 export default function App() {
   const [
-    { questions, status, index, answer, points, highscore, reset },
+    { questions, status, index, answer, points, highscore, secondsRemaing },
     dispatch,
   ] = useReducer(reducer, initialState);
 
@@ -120,12 +132,15 @@ export default function App() {
               dispatch={dispatch}
               answer={answer}
             />
-            <NextButton
-              dispatch={dispatch}
-              answer={answer}
-              index={index}
-              numQuestions={numQuestions}
-            />
+            <Footer>
+              <Timer secondsRemaing={secondsRemaing} dispatch={dispatch} />
+              <NextButton
+                dispatch={dispatch}
+                answer={answer}
+                index={index}
+                numQuestions={numQuestions}
+              />
+            </Footer>
           </>
         )}
         {status === "finished" && (
@@ -133,7 +148,6 @@ export default function App() {
             points={points}
             maxPossiblePoints={maxPossiblePoints}
             highscore={highscore}
-            reset={reset}
             dispatch={dispatch}
           />
         )}
